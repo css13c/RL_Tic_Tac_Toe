@@ -1,0 +1,1 @@
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\bin\Debug\RL_TicTacToe.exe.config
