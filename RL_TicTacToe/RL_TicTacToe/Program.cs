@@ -39,7 +39,7 @@ namespace RL_TicTacToe
 		//members
 		private string board; //string represents the current board state
 		private double score; //the RL value of this action
-		private State[] actions; //array of possible action states
+		private List<State> actions; //array of possible action states
 
 		//functions
 		public State(string b)
@@ -50,15 +50,13 @@ namespace RL_TicTacToe
 		}
 		public void populateActions(char turn) //go through string and for each empty space, create a board where that space is filled and add it to actions
 		{
-			int count = 0;
 			for(int i=0; i<9; i++)
 			{
 				if(board[i] == '.')
 				{
 					StringBuilder temp = new StringBuilder(board);
 					temp[i] = turn;
-					actions[count] = new State(temp.ToString());
-					count++;
+					actions.Add( new State(temp.ToString()) );
 				}
 			}
 		}
@@ -70,7 +68,7 @@ namespace RL_TicTacToe
 		{
 			return board;
 		}
-		public State[] getActions()
+		public List<State> getActions()
 		{
 			return actions;
 		}
@@ -106,8 +104,97 @@ namespace RL_TicTacToe
 		}
 	}
 
+	class Agent
+	{
+		//member
+		private List<State> boards;
+		private char player;
+		private bool explore
+		{
+			get { return explore; }
+			set { value = explore; }
+		}
+		private Random rng;
+		private const double learnDecay = 0.2;
+
+		//functions
+		public Agent(char turn)
+		{
+			player = turn;
+			boards = new List<State>();
+			boards.Add(new State("........."));
+			rng = new Random();
+			explore = true;
+		}
+		public Agent(char turn, List<State> array)
+		{
+			player = turn;
+			boards = array;
+			explore = false;
+			rng = new Random();
+		}
+		public char getSide()
+		{
+			return player;
+		}
+
+		public State makeMove(State prev)
+		{
+			if (!boards.Contains(prev)) //if the list doesn't have that board, add it
+			{
+				boards.Add(prev);
+			}
+
+			//decide what the next move should be
+			State current = boards.Find(new Predicate<State>(n => prev == n));
+			State next;
+			if(current.getActions() != null) //if the board doesn't have the possible moves, make them then decide
+			{
+				current.getActions().Sort((x, y) => y.getScore().CompareTo(x.getScore()));
+				if (explore)
+				{
+					int random = rng.Next(1, current.getActions().Count);
+					next = current.getActions()[random];
+				}
+				else
+					next = current.getActions()[0];
+			}
+			else
+			{
+				current.populateActions(player);
+				int random = rng.Next(current.getActions().Count);
+				next = current.getActions()[random];
+			}
+
+			return next;
+		}
+		public void reward(bool win)
+		{
+			if(win)
+		}
+	}
+
 	class Program
 	{
+		static void populateAgents(Agent x, Agent o, int gameCount)
+		{
+			int count = 0;
+			State start = new State(".........");
+			while(count < gameCount)
+			{
+				State current = start;
+				char turn = 'X';
+				while(!current.isFinished() && !current.isWin(turn))
+				{
+
+				}
+			}
+		}
+		static void saveData(Agent x, Agent o)
+		{
+
+		}
+
 		static void Main(string[] args)
 		{
 		}
