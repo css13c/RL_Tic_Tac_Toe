@@ -39,7 +39,10 @@ namespace RL_TicTacToe
 			board = b;
 			score = 0.5;
 			actions = null;
-			parent = p;
+			if (p != null)
+				parent = p;
+			else
+				parent = null;
 		}
 		public State(string b, double s)
 		{
@@ -50,6 +53,7 @@ namespace RL_TicTacToe
 		}
 		public void populateActions(char turn) //go through string and for each empty space, create a board where that space is filled and add it to actions
 		{
+			actions = new List<State>();
 			for(int i=0; i<9; i++)
 			{
 				if(board[i] == '.')
@@ -150,11 +154,7 @@ namespace RL_TicTacToe
 		//member
 		private List<State> boards;
 		private char player;
-		private bool explore
-		{
-			get { return explore; }
-			set { value = explore; }
-		}
+		private bool explore;
 		private Random rng;
 		private const double learnFactor = 0.2;
 		private const double learnDecay = .03;
@@ -183,6 +183,14 @@ namespace RL_TicTacToe
 		{
 			return boards;
 		}
+		public void setExplore(bool e)
+		{
+			explore = e;
+		}
+		public bool getExplore()
+		{
+			return explore;
+		}
 
 		public State makeMove(State prev)
 		{
@@ -199,7 +207,7 @@ namespace RL_TicTacToe
 				current.getActions().Sort((x, y) => y.getScore().CompareTo(x.getScore()));
 				if (explore)
 				{
-					int random = rng.Next(1, current.getActions().Count);
+					int random = rng.Next(0, current.getActions().Count);
 					next = current.getActions()[random];
 				}
 				else
@@ -298,17 +306,22 @@ namespace RL_TicTacToe
 				{
 					x.reward("win", current);
 					o.reward("lose", current);
+					Console.WriteLine("X Wins");
 				}
 				if(!xWin && !draw)
 				{
 					o.reward("win", current);
 					x.reward("lose", current);
+					Console.WriteLine("O Wins");
 				}
 				if(draw)
 				{
 					o.reward("draw", current);
 					x.reward("draw", current);
+					Console.WriteLine("Draw");
 				}
+
+				count++;
 			}
 		}
 		static void saveData(Agent a)
@@ -316,9 +329,9 @@ namespace RL_TicTacToe
 			//make a text file in the MyDocuments folder
 			string filename;
 			if(a.getSide() == 'X')
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentX.csv";
+				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentX.csv";
 			else
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentO.csv";
+				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentO.csv";
 			StreamWriter file = new StreamWriter(@filename);
 			file.AutoFlush = true;
 
@@ -350,9 +363,9 @@ namespace RL_TicTacToe
 			//open file
 			string filename;
 			if (side == 'X')
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentX.csv";
+				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentX.csv";
 			else
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentO.csv";
+				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentO.csv";
 			StreamReader file = new StreamReader(@filename);
 
 			//read in data, and create a new State List from it, along with the parent of each board
@@ -479,16 +492,21 @@ namespace RL_TicTacToe
 		static void Main(string[] args)
 		{
 			//create strings for where agent data is stored
-			string filenameX = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentX.csv";
-			string filenameO = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentO.csv";
+			string filenameX = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentX.csv";
+			string filenameO = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentO.csv";
 
 			//check if the agent data exists, if so build those, otherwise build new agents
 			Agent agentX;
 			Agent agentO;
-			if (File.Exists(filenameX))
+			if (File.Exists(@filenameX))
+			{
 				agentX = readData('X');
+			}
 			else
+			{
+				Console.WriteLine("Making agent X");
 				agentX = new Agent('X');
+			}
 			if(File.Exists(filenameO))
 				agentO = readData('O');
 			else
@@ -499,15 +517,23 @@ namespace RL_TicTacToe
 			if (input == "y" | input == "yes")
 			{
 				play(agentO, agentX);
+				saveData(agentO);
+				saveData(agentX);
 			}
 			else
 			{
 				Console.WriteLine("How many games to play? ");
 				var count = Convert.ToInt32(Console.ReadLine());
 				populateAgents(agentX, agentO, count);
+				Console.WriteLine("Save Data? ");
+				input = Console.ReadLine();
+				if (input == "y" | input == "yes")
+				{
+					saveData(agentO);
+					saveData(agentX);
+				}
 			}
-
-			Console.ReadLine();
+			
 		}
 	}
 }
