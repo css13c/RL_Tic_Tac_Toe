@@ -337,9 +337,8 @@ namespace RL_TicTacToe
 
 			//store board data in csv as board,score,parent
 			int count = 0;
-			while(count < a.getBoards().Count)
+			foreach(var current in a.getBoards())
 			{
-				State current = a.getBoards()[count];
 				file.Write(current.getBoard().ToString());
 				file.Write(",");
 				file.Write(current.getScore().ToString());
@@ -374,6 +373,7 @@ namespace RL_TicTacToe
 			List<State> boards = new List<State>();
 			while(newItem != null)
 			{
+				Console.WriteLine("newItem: {0}", newItem);
 				var thing = newItem.Split(',');
 				var b = thing[0];
 				var s = Convert.ToDouble(thing[1]);
@@ -383,15 +383,22 @@ namespace RL_TicTacToe
 				temp.board = b;
 				temp.parent = p;
 				connect.Add(temp);
+				newItem = file.ReadLine();
 			}
 
+			Console.WriteLine("Read all data");
 			//go through the connect list and connect all states to each other
 			foreach(var obj in connect)
 			{
-				var x = boards.FindIndex(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
-				var y = boards.FindIndex(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
-				boards[x].setParent(boards[y]);//set y as x's parent
-				boards[y].addAction(boards[x]);//add x to y's action list
+				if (obj.parent != "null")
+				{
+					Console.WriteLine("Board: {0}", obj.board);
+					Console.WriteLine("Parent: {0}", obj.parent);
+					var x = boards.FindIndex(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
+					var y = boards.FindIndex(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
+					boards[x].setParent(boards[y]);//set y as x's parent
+					boards[y].addAction(boards[x]);//add x to y's action list
+				}
 			}
 
 			return new Agent(side, boards);
