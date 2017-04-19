@@ -41,6 +41,13 @@ namespace RL_TicTacToe
 			actions = null;
 			parent = p;
 		}
+		public State(string b, double s)
+		{
+			board = b;
+			score = s;
+			actions = null;
+			parent = null;
+		}
 		public void populateActions(char turn) //go through string and for each empty space, create a board where that space is filled and add it to actions
 		{
 			for(int i=0; i<9; i++)
@@ -73,6 +80,24 @@ namespace RL_TicTacToe
 		{
 			score = s;
 		}
+		public void setBoard(string b)
+		{
+			board = b;
+		}
+		public void setParent(State p)
+		{
+			parent = p;
+		}
+		public void addAction(State a)
+		{
+			if (actions == null)
+			{
+				actions = new List<State>();
+				actions.Add(a);
+			}
+			else
+				actions.Add(a);
+		}
 		public bool isWin(char turn)
 		{
 			int[] moves = new int[9];
@@ -99,7 +124,24 @@ namespace RL_TicTacToe
 		}
 		public bool isFinished()
 		{
-			return board.Contains(".");
+			return !board.Contains(".");
+		}
+		public void print()
+		{
+			for(int i=0; i<9; i++)
+			{
+				if (board[i] != '.')
+					Console.Write("{0}", board[i]);
+				else
+					Console.Write(" ");
+				if ((i + 1) % 3 == 0)
+				{
+					Console.WriteLine();
+					Console.WriteLine("-----");
+				}
+				else
+					Console.Write("|");
+			}
 		}
 	}
 
@@ -122,7 +164,7 @@ namespace RL_TicTacToe
 		{
 			player = turn;
 			boards = new List<State>();
-			boards.Add(new State("........."));
+			boards.Add(new State(".........", null));
 			rng = new Random();
 			explore = true;
 		}
@@ -298,6 +340,11 @@ namespace RL_TicTacToe
 			}
 			file.WriteLine();
 		}
+		public struct readIn
+		{
+			public string board;
+			public string parent;
+		};
 		static Agent readData(char side)
 		{
 			//open file
@@ -308,16 +355,159 @@ namespace RL_TicTacToe
 				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentO.csv";
 			StreamReader file = new StreamReader(@filename);
 
-			//read in data, and create a new State List from it
+			//read in data, and create a new State List from it, along with the parent of each board
 			var newItem = file.ReadLine();
+			List<readIn> connect = new List<readIn>();
+			List<State> boards = new List<State>();
 			while(newItem != null)
 			{
+				var thing = newItem.Split(',');
+				var b = thing[0];
+				var s = Convert.ToDouble(thing[1]);
+				var p = thing[2];
+				boards.Add(new State(b,s));
+				readIn temp;
+				temp.board = b;
+				temp.parent = p;
+				connect.Add(temp);
+			}
 
+			//go through the connect list and connect all states to each other
+			foreach(var obj in connect)
+			{
+				var x = boards.FindIndex(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
+				var y = boards.FindIndex(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
+				boards[x].setParent(boards[y]);//set y as x's parent
+				boards[y].addAction(boards[x]);//add x to y's action list
+			}
+
+			return new Agent(side, boards);
+		}
+		static void play(Agent agentO, Agent agentX)
+		{
+			//determine if the player is playing X or O, and get the opposing agent
+			Agent comp;
+			char agent;
+			char human;
+			Console.WriteLine("X or O? ");
+			var input = Console.ReadLine();
+			if (input == "X" | input == "x")
+			{
+				comp = agentO;
+				agent = 'O';
+				human = 'X';
+			}
+			else
+			{
+				comp = agentX;
+				agent = 'X';
+				human = 'O';
+			}
+
+			//while the player wants to play, continue playing games
+			bool done = false;
+			Random rng = new Random();
+			State start = new State(".........", null);
+			while (!done)
+			{
+				State current = start;
+				var select = rng.Next(0, 2);
+				bool compWin = false;
+				bool draw = false;
+				char turn;
+				if (select == 0) //randomly select who goes first
+					turn = 'X';
+				else
+					turn = 'O';
+
+				//play the game
+				while (!current.isFinished() && !current.isWin(turn))
+				{
+					if (turn == agent)
+					{
+						current = comp.makeMove(current);
+						turn = human;
+						if (current.isWin(agent))
+							compWin = true;
+					}
+					if (turn == human)
+					{
+						current.print();
+						Console.WriteLine("Input the number of the square you want to play in (the top-left square is 0): ");
+						var index = Convert.ToInt32(Console.ReadLine());
+						while (current.getBoard()[index] != '.')
+						{
+							Console.WriteLine("Try again: ");
+							index = Convert.ToInt32(Console.ReadLine());
+						}
+						StringBuilder temp = new StringBuilder(current.getBoard());
+						temp[index] = human;
+						current.setBoard(temp.ToString());
+						turn = agent;
+					}
+					if (current.isFinished())
+						draw = true;
+				}
+
+				//output the results of the game, if its not a draw, give rewards to agents
+				if (!draw)
+				{
+					if (compWin)
+					{
+						comp.reward("win", current);
+						Console.WriteLine("\n");
+						Console.WriteLine("You Win!!!");
+					}
+					else
+					{
+						comp.reward("lose", current);
+						Console.WriteLine("\n");
+						Console.WriteLine("You Lose.");
+					}
+				}
+				else
+				{
+					Console.WriteLine("Draw.");
+				}
+				Console.WriteLine("Go again? ");
+				input = Console.ReadLine();
+				if (input == "n" | input == "no")
+					done = false;
 			}
 		}
 
 		static void Main(string[] args)
 		{
+			//create strings for where agent data is stored
+			string filenameX = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentX.csv";
+			string filenameO = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\agentO.csv";
+
+			//check if the agent data exists, if so build those, otherwise build new agents
+			Agent agentX;
+			Agent agentO;
+			if (File.Exists(filenameX))
+				agentX = readData('X');
+			else
+				agentX = new Agent('X');
+			if(File.Exists(filenameO))
+				agentO = readData('O');
+			else
+				agentO = new Agent('O');
+
+			Console.WriteLine("Play? ");
+			var input = Console.ReadLine();
+			if (input == "y" | input == "yes")
+			{
+				play(agentO, agentX);
+			}
+			else
+			{
+				Console.WriteLine("How many games to play? ");
+				var count = Convert.ToInt32(Console.ReadLine());
+				populateAgents(agentX, agentO, count);
+			}
+
+			Console.ReadLine();
 		}
 	}
 }
