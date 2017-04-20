@@ -307,25 +307,25 @@ namespace RL_TicTacToe
 						turn = 'X';
 					}
 				}
-				current.print();
+				//current.print();
 				//once game is over, have both agents give rewards
 				if(xWin)
 				{
 					x.reward("win", current);
 					o.reward("lose", current);
-					Console.WriteLine("X Wins\n");
+					//Console.WriteLine("X Wins\n");
 				}
 				if(oWin)
 				{
 					o.reward("win", current);
 					x.reward("lose", current);
-					Console.WriteLine("O Wins\n");
+					//Console.WriteLine("O Wins\n");
 				}
 				if(!xWin && !oWin)
 				{
 					o.reward("draw", current);
 					x.reward("draw", current);
-					Console.WriteLine("Draw\n");
+					//Console.WriteLine("Draw\n");
 				}
 
 				count++;
