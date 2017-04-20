@@ -5,3 +5,8 @@ E:\Programming\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\bin\Debug\RL_TicTacToe.p
 E:\Programming\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.csprojResolveAssemblyReference.cache
 E:\Programming\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.exe
 E:\Programming\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.pdb
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.exe
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.pdb
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\bin\Debug\RL_TicTacToe.exe
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\bin\Debug\RL_TicTacToe.pdb
+C:\Users\Connor\Documents\GitHub\RL_Tic_Tac_Toe\RL_TicTacToe\RL_TicTacToe\obj\Debug\RL_TicTacToe.csprojResolveAssemblyReference.cache

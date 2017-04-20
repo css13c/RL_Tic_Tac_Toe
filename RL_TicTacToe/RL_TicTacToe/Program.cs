@@ -51,6 +51,13 @@ namespace RL_TicTacToe
 			actions = null;
 			parent = null;
 		}
+		public State(State c)
+		{
+			actions = c.getActions();
+			board = c.getBoard();
+			score = c.getScore();
+			parent = c.getParent();
+		}
 		public void populateActions(char turn) //go through string and for each empty space, create a board where that space is filled and add it to actions
 		{
 			actions = new List<State>();
@@ -113,7 +120,7 @@ namespace RL_TicTacToe
 				}
 			}
 			/*Console.Write("Moves of {0}: ", turn);
-			foreach(var obj in moves)
+			foreach (var obj in moves)
 			{
 				Console.Write("{0},", obj);
 			}
@@ -128,7 +135,10 @@ namespace RL_TicTacToe
 						win = false;
 				}
 				if (win)
+				{
+					//Console.WriteLine("{0} wins", turn);
 					return true;
+				}
 			}
 			return false;
 		}
@@ -171,6 +181,7 @@ namespace RL_TicTacToe
 		{
 			player = turn;
 			boards = new List<State>();
+			boards.Add(new State(".........", null));
 			rng = new Random();
 			explore = true;
 		}
@@ -179,6 +190,13 @@ namespace RL_TicTacToe
 			player = turn;
 			boards = array;
 			explore = false;
+			rng = new Random();
+		}
+		public Agent(Agent temp)
+		{
+			boards = temp.getBoards();
+			player = temp.getSide();
+			explore = temp.getExplore();
 			rng = new Random();
 		}
 		public char getSide()
@@ -196,7 +214,7 @@ namespace RL_TicTacToe
 		public bool getExplore()
 		{
 			return explore;
-		}
+		} 
 
 		public State makeMove(State prev)
 		{
@@ -204,17 +222,19 @@ namespace RL_TicTacToe
 			{
 				boards.Add(prev);
 			}
-			if(prev.getParent() != null && !boards.Contains(prev.getParent()))
-			{
-				boards.Add(prev.getParent());
-			}
 
 			//decide what the next move should be
-			State current = boards.Find(new Predicate<State>(n => prev == n));
+			State current = boards.Find(new Predicate<State>(n => prev.getBoard() == n.getBoard()));
 			State next;
-			if(current.getActions() != null) //if the board doesn't have the possible moves, make them then decide
+			if (current.getActions() != null) //if the board doesn't have the possible moves, make them then decide
 			{
 				current.getActions().Sort((x, y) => y.getScore().CompareTo(x.getScore()));
+				Console.Write("Action values: ");
+				foreach (var obj in current.getActions())
+				{
+					Console.Write("{0},", obj.getBoard());
+				}
+				Console.WriteLine();
 				if (explore)
 				{
 					int random = rng.Next(0, current.getActions().Count);
@@ -225,7 +245,12 @@ namespace RL_TicTacToe
 			}
 			else
 			{
+				Console.WriteLine("No actions");
 				current.populateActions(player);
+				foreach(var obj in current.getActions())
+				{
+					boards.Add(obj);
+				}
 				int random = rng.Next(current.getActions().Count);
 				next = current.getActions()[random];
 			}
@@ -276,7 +301,7 @@ namespace RL_TicTacToe
 			while(count < gameCount)
 			{
 				//set up game at each loop iteration
-				State current = start;
+				State current = new State(start);
 				var select = rng.Next(0, 2);
 				bool xWin = false;
 				bool oWin = false;
@@ -435,13 +460,11 @@ namespace RL_TicTacToe
 			bool done = false;
 			Random rng = new Random();
 			State start = new State(".........", null);
-			Console.WriteLine("Agent is: {0}", agent);
+			Console.WriteLine("Agent is: {0}", comp.getSide());
 			Console.WriteLine("Human is: {0}", human);
 			while (!done)
 			{
-				start.print();
-				State current = start;
-				current.print();
+				State current = new State(start);
 				var select = rng.Next(0, 2);
 				bool compWin = false;
 				bool humWin = false;
@@ -452,18 +475,23 @@ namespace RL_TicTacToe
 				else
 					turn = 'O';
 
+				Console.WriteLine("{0} goes first", turn);
 				//play the game
 				while (!current.isFinished() && !compWin && !humWin)
 				{
 					if (turn == agent)
 					{
-						Console.WriteLine("Comp Went.");
+						Console.WriteLine();
+						current.print();
 						current = comp.makeMove(current);
+						Console.WriteLine();
+						current.print();
+						Console.WriteLine();
 						if (current.isWin(agent))
 							compWin = true;
 						turn = human;
 					}
-					if (turn == human)
+					else if (turn == human)
 					{
 						current.print();
 						Console.WriteLine("Input the number of the square you want to play in (the top-left square is 0): ");
@@ -482,7 +510,7 @@ namespace RL_TicTacToe
 					}
 					if (current.isFinished() && !compWin && !humWin)
 						draw = true;
-					Console.WriteLine("Is finished? {0}", current.isFinished());
+					//Console.WriteLine("Is finished? {0}", current.isFinished());
 				}
 
 				//output the results of the game, if its not a draw, give rewards to agents
