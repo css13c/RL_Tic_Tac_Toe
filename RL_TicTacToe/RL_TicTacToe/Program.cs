@@ -17,8 +17,8 @@ namespace RL_TicTacToe
 			new int[] {3,4,5}, 
 			new int[] {6,7,8},
 			new int[] {0,3,6},
-			new int[] {1,5,7},
-			new int[] {2,6,8},
+			new int[] {1,4,7},
+			new int[] {2,5,8},
 			new int[] {0,4,8},
 			new int[] {2,4,6}
 		};
@@ -104,15 +104,21 @@ namespace RL_TicTacToe
 		}
 		public bool isWin(char turn)
 		{
-			int[] moves = new int[9];
-			int count = 0;
+			List<int> moves = new List<int>();
 			for(int i=0; i<9; i++)
 			{
 				if(board[i] == turn)
 				{
-					moves[count] = i;
+					moves.Add(i);
 				}
 			}
+			/*Console.Write("Moves of {0}: ", turn);
+			foreach(var obj in moves)
+			{
+				Console.Write("{0},", obj);
+			}
+			Console.WriteLine();*/
+
 			foreach(var obj in Win.winning)
 			{
 				bool win = true;
@@ -141,7 +147,8 @@ namespace RL_TicTacToe
 				if ((i + 1) % 3 == 0)
 				{
 					Console.WriteLine();
-					Console.WriteLine("-----");
+					if(i != 8)
+						Console.WriteLine("-----");
 				}
 				else
 					Console.Write("|");
@@ -164,7 +171,6 @@ namespace RL_TicTacToe
 		{
 			player = turn;
 			boards = new List<State>();
-			boards.Add(new State(".........", null));
 			rng = new Random();
 			explore = true;
 		}
@@ -194,9 +200,13 @@ namespace RL_TicTacToe
 
 		public State makeMove(State prev)
 		{
-			if (!boards.Contains(prev)) //if the list doesn't have that board, add it
+			if (!boards.Contains(prev) ) //if the list doesn't have that board, add it
 			{
 				boards.Add(prev);
+			}
+			if(prev.getParent() != null && !boards.Contains(prev.getParent()))
+			{
+				boards.Add(prev.getParent());
 			}
 
 			//decide what the next move should be
@@ -269,56 +279,53 @@ namespace RL_TicTacToe
 				State current = start;
 				var select = rng.Next(0, 2);
 				bool xWin = false;
-				bool draw = false;
+				bool oWin = false;
 				char turn;
 				if (select == 0) //randomly select who goes first
 					turn = 'X';
 				else
 					turn = 'O';
-
 				//play the game
-				while(!current.isFinished() && !current.isWin(turn))
+				while (!current.isFinished() && !oWin && !xWin)
 				{
 					if(turn == 'X')
 					{
 						current = x.makeMove(current);
-						turn = 'O';
 						if (current.isWin(turn))
 						{
 							xWin = true;
 						}
+						turn = 'O';
 					}
 					else
 					{
 						current = o.makeMove(current);
-						turn = 'X';
-						if(current.isWin(turn))
+						if (current.isWin(turn))
 						{
-							xWin = false;
+							oWin = true;
 						}
+						turn = 'X';
 					}
-					if (current.isFinished())
-						draw = true;
 				}
-
+				current.print();
 				//once game is over, have both agents give rewards
-				if(xWin && !draw)
+				if(xWin)
 				{
 					x.reward("win", current);
 					o.reward("lose", current);
-					Console.WriteLine("X Wins");
+					Console.WriteLine("X Wins\n");
 				}
-				if(!xWin && !draw)
+				if(oWin)
 				{
 					o.reward("win", current);
 					x.reward("lose", current);
-					Console.WriteLine("O Wins");
+					Console.WriteLine("O Wins\n");
 				}
-				if(draw)
+				if(!xWin && !oWin)
 				{
 					o.reward("draw", current);
 					x.reward("draw", current);
-					Console.WriteLine("Draw");
+					Console.WriteLine("Draw\n");
 				}
 
 				count++;
@@ -327,12 +334,12 @@ namespace RL_TicTacToe
 		static void saveData(Agent a)
 		{
 			//make a text file in the MyDocuments folder
-			string filename;
+			string filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 			if(a.getSide() == 'X')
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentX.csv";
+				filename += "\\agentX.csv";
 			else
-				filename = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\agentO.csv";
-			StreamWriter file = new StreamWriter(@filename);
+				filename += "\\agentO.csv";
+			StreamWriter file = new StreamWriter(@filename, false);
 			file.AutoFlush = true;
 
 			//store board data in csv as board,score,parent
@@ -350,7 +357,7 @@ namespace RL_TicTacToe
 
 				count++;
 			}
-			file.WriteLine();
+			file.WriteLine("end");
 		}
 		public struct readIn
 		{
@@ -371,9 +378,8 @@ namespace RL_TicTacToe
 			var newItem = file.ReadLine();
 			List<readIn> connect = new List<readIn>();
 			List<State> boards = new List<State>();
-			while(newItem != null)
+			while(newItem != "end")
 			{
-				Console.WriteLine("newItem: {0}", newItem);
 				var thing = newItem.Split(',');
 				var b = thing[0];
 				var s = Convert.ToDouble(thing[1]);
@@ -385,22 +391,23 @@ namespace RL_TicTacToe
 				connect.Add(temp);
 				newItem = file.ReadLine();
 			}
-
-			Console.WriteLine("Read all data");
+			
+			/*foreach(var obj in boards)
+			{
+				Console.WriteLine("{0}, ", obj.getBoard());
+			}*/
 			//go through the connect list and connect all states to each other
 			foreach(var obj in connect)
 			{
 				if (obj.parent != "null")
 				{
-					Console.WriteLine("Board: {0}", obj.board);
-					Console.WriteLine("Parent: {0}", obj.parent);
-					var x = boards.FindIndex(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
-					var y = boards.FindIndex(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
-					boards[x].setParent(boards[y]);//set y as x's parent
-					boards[y].addAction(boards[x]);//add x to y's action list
+					var x = boards.Find(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
+					var y = boards.Find(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
+					x.setParent(y);//set y as x's parent
+					y.addAction(x);//add x to y's action list
 				}
 			}
-
+			file.Close();
 			return new Agent(side, boards);
 		}
 		static void play(Agent agentO, Agent agentX)
@@ -511,7 +518,6 @@ namespace RL_TicTacToe
 			}
 			else
 			{
-				Console.WriteLine("Making agent X");
 				agentX = new Agent('X');
 			}
 			if(File.Exists(filenameO))
@@ -523,6 +529,8 @@ namespace RL_TicTacToe
 			var input = Console.ReadLine();
 			if (input == "y" | input == "yes")
 			{
+				agentO.setExplore(false);
+				agentX.setExplore(false);
 				play(agentO, agentX);
 				saveData(agentO);
 				saveData(agentX);
