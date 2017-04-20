@@ -435,11 +435,16 @@ namespace RL_TicTacToe
 			bool done = false;
 			Random rng = new Random();
 			State start = new State(".........", null);
+			Console.WriteLine("Agent is: {0}", agent);
+			Console.WriteLine("Human is: {0}", human);
 			while (!done)
 			{
+				start.print();
 				State current = start;
+				current.print();
 				var select = rng.Next(0, 2);
 				bool compWin = false;
+				bool humWin = false;
 				bool draw = false;
 				char turn;
 				if (select == 0) //randomly select who goes first
@@ -448,14 +453,15 @@ namespace RL_TicTacToe
 					turn = 'O';
 
 				//play the game
-				while (!current.isFinished() && !current.isWin(turn))
+				while (!current.isFinished() && !compWin && !humWin)
 				{
 					if (turn == agent)
 					{
+						Console.WriteLine("Comp Went.");
 						current = comp.makeMove(current);
-						turn = human;
 						if (current.isWin(agent))
 							compWin = true;
+						turn = human;
 					}
 					if (turn == human)
 					{
@@ -470,29 +476,29 @@ namespace RL_TicTacToe
 						StringBuilder temp = new StringBuilder(current.getBoard());
 						temp[index] = human;
 						current.setBoard(temp.ToString());
+						if (current.isWin(human))
+							humWin = true;
 						turn = agent;
 					}
-					if (current.isFinished())
+					if (current.isFinished() && !compWin && !humWin)
 						draw = true;
+					Console.WriteLine("Is finished? {0}", current.isFinished());
 				}
 
 				//output the results of the game, if its not a draw, give rewards to agents
-				if (!draw)
+				if (compWin)
 				{
-					if (compWin)
-					{
-						comp.reward("win", current);
-						Console.WriteLine("\n");
-						Console.WriteLine("You Win!!!");
-					}
-					else
-					{
-						comp.reward("lose", current);
-						Console.WriteLine("\n");
-						Console.WriteLine("You Lose.");
-					}
+					comp.reward("win", current);
+					Console.WriteLine("\n");
+					Console.WriteLine("You Lose.");
 				}
-				else
+				if (humWin)
+				{
+					comp.reward("lose", current);
+					Console.WriteLine("\n");
+					Console.WriteLine("You Win!!!");
+				}
+				if (draw)
 				{
 					Console.WriteLine("Draw.");
 				}
