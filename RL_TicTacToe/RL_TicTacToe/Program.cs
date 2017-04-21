@@ -247,10 +247,10 @@ namespace RL_TicTacToe
 			{
 				Console.WriteLine("No actions");
 				current.populateActions(player);
-				foreach(var obj in current.getActions())
+				/*foreach(var obj in current.getActions())
 				{
 					boards.Add(obj);
-				}
+				}*/
 				int random = rng.Next(current.getActions().Count);
 				next = current.getActions()[random];
 			}
