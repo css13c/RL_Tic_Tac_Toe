@@ -305,11 +305,7 @@ namespace RL_TicTacToe
 				var select = rng.Next(0, 2);
 				bool xWin = false;
 				bool oWin = false;
-				char turn;
-				if (select == 0) //randomly select who goes first
-					turn = 'X';
-				else
-					turn = 'O';
+				char turn = 'X';
 				//play the game
 				while (!current.isFinished() && !oWin && !xWin)
 				{
@@ -458,22 +454,16 @@ namespace RL_TicTacToe
 
 			//while the player wants to play, continue playing games
 			bool done = false;
-			Random rng = new Random();
 			State start = new State(".........", null);
 			Console.WriteLine("Agent is: {0}", comp.getSide());
 			Console.WriteLine("Human is: {0}", human);
 			while (!done)
 			{
 				State current = new State(start);
-				var select = rng.Next(0, 2);
 				bool compWin = false;
 				bool humWin = false;
 				bool draw = false;
-				char turn;
-				if (select == 0) //randomly select who goes first
-					turn = 'X';
-				else
-					turn = 'O';
+				char turn = 'X';
 
 				Console.WriteLine("{0} goes first", turn);
 				//play the game
