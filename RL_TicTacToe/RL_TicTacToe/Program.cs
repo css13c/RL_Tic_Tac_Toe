@@ -173,8 +173,7 @@ namespace RL_TicTacToe
 		private char player;
 		private bool explore;
 		private Random rng;
-		private const double learnFactor = 0.2;
-		private const double learnDecay = .03;
+		private const double learnFactor = 0.1;
 
 		//functions
 		public Agent(char turn)
@@ -225,6 +224,7 @@ namespace RL_TicTacToe
 
 			//decide what the next move should be
 			State current = boards.Find(new Predicate<State>(n => prev.getBoard() == n.getBoard()));
+			Console.WriteLine("Found Board: {0}", current.getBoard());
 			State next;
 			if (current.getActions() != null) //if the board doesn't have the possible moves, make them then decide
 			{
@@ -247,13 +247,14 @@ namespace RL_TicTacToe
 			{
 				Console.WriteLine("No actions");
 				current.populateActions(player);
-				/*foreach(var obj in current.getActions())
+				foreach(var obj in current.getActions())
 				{
 					boards.Add(obj);
-				}*/
+				}
 				int random = rng.Next(current.getActions().Count);
 				next = current.getActions()[random];
 			}
+			Console.WriteLine("{0}'s turn, Old board: {1}, New Board: {2}", player, prev.getBoard(), next.getBoard());
 
 			return next;
 		}
@@ -262,12 +263,10 @@ namespace RL_TicTacToe
 			if(win == "win")
 			{
 				final.setScore(1);
-				double value = learnFactor;
 				State current = final.getParent();
 				while(current != null)
 				{
-					current.setScore(current.getScore() + value);
-					value -= learnDecay;
+					current.setScore(current.getScore() + current.getScore()*learnFactor);
 					current = current.getParent();
 				}
 			}
@@ -282,8 +281,7 @@ namespace RL_TicTacToe
 				State current = final.getParent();
 				while(current != null)
 				{
-					current.setScore(current.getScore() - value);
-					value += learnDecay;
+					current.setScore(current.getScore() - current.getScore() * learnFactor);
 					current = current.getParent();
 				}
 			}
@@ -334,19 +332,22 @@ namespace RL_TicTacToe
 				{
 					x.reward("win", current);
 					o.reward("lose", current);
-					//Console.WriteLine("X Wins\n");
+					Console.WriteLine("X Wins\n");
+					Console.WriteLine();
 				}
 				if(oWin)
 				{
 					o.reward("win", current);
 					x.reward("lose", current);
-					//Console.WriteLine("O Wins\n");
+					Console.WriteLine("O Wins\n");
+					Console.WriteLine();
 				}
 				if(!xWin && !oWin)
 				{
 					o.reward("draw", current);
 					x.reward("draw", current);
-					//Console.WriteLine("Draw\n");
+					Console.WriteLine("Draw\n");
+					Console.WriteLine();
 				}
 
 				count++;
@@ -424,8 +425,8 @@ namespace RL_TicTacToe
 				{
 					var x = boards.Find(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
 					var y = boards.Find(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
-					x.setParent(y);//set y as x's parent
-					y.addAction(x);//add x to y's action list
+					x.setParent(y);//set y as x's parent\
+					Console.WriteLine("Board: {0}, Parent:{1}", x.getBoard(), y.getBoard());
 				}
 			}
 			file.Close();
@@ -471,12 +472,7 @@ namespace RL_TicTacToe
 				{
 					if (turn == agent)
 					{
-						Console.WriteLine();
-						current.print();
 						current = comp.makeMove(current);
-						Console.WriteLine();
-						current.print();
-						Console.WriteLine();
 						if (current.isWin(agent))
 							compWin = true;
 						turn = human;
@@ -503,6 +499,7 @@ namespace RL_TicTacToe
 					//Console.WriteLine("Is finished? {0}", current.isFinished());
 				}
 
+				done = true;
 				//output the results of the game, if its not a draw, give rewards to agents
 				if (compWin)
 				{
@@ -522,7 +519,7 @@ namespace RL_TicTacToe
 				}
 				Console.WriteLine("Go again? ");
 				input = Console.ReadLine();
-				if (input == "n" | input == "no")
+				if (input == "y" | input == "yes")
 					done = false;
 			}
 		}
