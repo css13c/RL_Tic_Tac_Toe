@@ -98,16 +98,30 @@ namespace RL_TicTacToe
 		public void setParent(State p)
 		{
 			parent = p;
+			p.addAction(this);
 		}
 		public void addAction(State a)
 		{
-			if (actions == null)
+			int thiscount = 0;
+			int count = 0;
+			for( int i=0; i<9; i++)
 			{
-				actions = new List<State>();
-				actions.Add(a);
+				if (board[i] != '.')
+					thiscount++;
+				if (a.getBoard()[i] != '.')
+					count++;
 			}
-			else
-				actions.Add(a);
+			if (count > thiscount)
+			{
+				if (actions == null)
+				{
+					actions = new List<State>();
+					actions.Add(a);
+				}
+				else
+					actions.Add(a);
+				//Console.WriteLine("Adding '{0}' as an action on '{1}'", a.getBoard(), board);
+			}
 		}
 		public bool isWin(char turn)
 		{
@@ -217,13 +231,16 @@ namespace RL_TicTacToe
 
 		public State makeMove(State prev)
 		{
-			if (!boards.Contains(prev) ) //if the list doesn't have that board, add it
+			Console.WriteLine("{0}'s Turn.", player);
+			State current = boards.Find(new Predicate<State>(n => prev.getBoard() == n.getBoard()));
+			if (current == null) //if the list doesn't have that board, add it
 			{
 				boards.Add(prev);
+				current = prev;
+				Console.WriteLine("List doesn't have board: {0}", prev.getBoard());
 			}
 
 			//decide what the next move should be
-			State current = boards.Find(new Predicate<State>(n => prev.getBoard() == n.getBoard()));
 			Console.WriteLine("Found Board: {0}", current.getBoard());
 			State next;
 			if (current.getActions() != null) //if the board doesn't have the possible moves, make them then decide
@@ -251,16 +268,18 @@ namespace RL_TicTacToe
 				{
 					boards.Add(obj);
 				}
+				Console.WriteLine();
 				int random = rng.Next(current.getActions().Count);
 				next = current.getActions()[random];
 			}
 			Console.WriteLine("{0}'s turn, Old board: {1}, New Board: {2}", player, prev.getBoard(), next.getBoard());
+			Console.WriteLine();
 
 			return next;
 		}
-		public void reward(string win, State final)
+		public void reward(bool win, State final)
 		{
-			if(win == "win")
+			if(win)
 			{
 				final.setScore(1);
 				State current = final.getParent();
@@ -270,14 +289,9 @@ namespace RL_TicTacToe
 					current = current.getParent();
 				}
 			}
-			else if(win == "draw")
-			{
-				return;
-			}
 			else
 			{
-				final.setScore(-1);
-				double value = -learnFactor;
+				final.setScore(final.getScore() - final.getScore() * learnFactor);
 				State current = final.getParent();
 				while(current != null)
 				{
@@ -330,22 +344,20 @@ namespace RL_TicTacToe
 				//once game is over, have both agents give rewards
 				if(xWin)
 				{
-					x.reward("win", current);
-					o.reward("lose", current);
+					x.reward(true, current);
+					o.reward(false, current);
 					Console.WriteLine("X Wins\n");
 					Console.WriteLine();
 				}
 				if(oWin)
 				{
-					o.reward("win", current);
-					x.reward("lose", current);
+					o.reward(true, current);
+					x.reward(false, current);
 					Console.WriteLine("O Wins\n");
 					Console.WriteLine();
 				}
 				if(!xWin && !oWin)
 				{
-					o.reward("draw", current);
-					x.reward("draw", current);
 					Console.WriteLine("Draw\n");
 					Console.WriteLine();
 				}
@@ -426,7 +438,7 @@ namespace RL_TicTacToe
 					var x = boards.Find(new Predicate<State>(n => obj.board == n.getBoard()));//get the index of the current board
 					var y = boards.Find(new Predicate<State>(n => obj.parent == n.getBoard()));//get the index of the current board's parent
 					x.setParent(y);//set y as x's parent\
-					Console.WriteLine("Board: {0}, Parent:{1}", x.getBoard(), y.getBoard());
+					//Console.WriteLine("Board: {0}, Parent:{1}", x.getBoard(), y.getBoard());
 				}
 			}
 			file.Close();
@@ -456,6 +468,7 @@ namespace RL_TicTacToe
 			//while the player wants to play, continue playing games
 			bool done = false;
 			State start = new State(".........", null);
+			comp.setExplore(false);
 			Console.WriteLine("Agent is: {0}", comp.getSide());
 			Console.WriteLine("Human is: {0}", human);
 			while (!done)
@@ -503,13 +516,13 @@ namespace RL_TicTacToe
 				//output the results of the game, if its not a draw, give rewards to agents
 				if (compWin)
 				{
-					comp.reward("win", current);
+					comp.reward(true, current);
 					Console.WriteLine("\n");
 					Console.WriteLine("You Lose.");
 				}
 				if (humWin)
 				{
-					comp.reward("lose", current);
+					comp.reward(false, current);
 					Console.WriteLine("\n");
 					Console.WriteLine("You Win!!!");
 				}
